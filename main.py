@@ -30,17 +30,14 @@ class Features(BaseModel):
     neighbourhood_group: str = Field(..., min_length=1, description="Borough or neighbourhood group")
     neighbourhood: str = Field(..., min_length=1, description="Specific neighbourhood name")
 
-@app.get('/')
-def greet():
-    return "Hello Guyss"
-
 @app.post('/predict')
-def predict(features:Features):
-    row=pd.DataFrame([features.dict()],columns=COLUMNS)
-    prediction=model.predict(row)
-    probability=model.predict_proba(row)
+def predict(features: Features):
+    # features.dict() is deprecated in Pydantic v2; use .model_dump() instead
+    row = pd.DataFrame([features.model_dump()], columns=COLUMNS)
+    prediction = model.predict(row)
+    probability = model.predict_proba(row)
 
     return {
-        'Predicted_room_type':prediction[0],
-        'probability':probability.to_list()[0]
+        'Predicted_room_type': str(prediction[0]),
+        'probability': probability.tolist()[0]  # Fixed: .tolist() instead of .to_list()
     }
