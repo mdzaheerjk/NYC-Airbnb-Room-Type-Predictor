@@ -33,28 +33,22 @@ class Features(BaseModel):
     neighbourhood_group: str = Field(..., min_length=1, description="Borough or neighbourhood group")
     neighbourhood: str = Field(..., min_length=1, description="Specific neighbourhood name")
 
-# 1. Serve index.html directly on the root URL
+# 1. Serve index.html cleanly on the root URL
 @app.get('/')
 def serve_home():
     return FileResponse("index.html")
 
-# 2. Mount individual static asset files so index.html can load them
-@app.get('/style.css')
-def serve_css():
-    return FileResponse("style.css")
-
-@app.get('/script.js')
-def serve_js():
-    return FileResponse("script.js")
-
+# 2. Fix the predict case mismatch from your JS file (result.Probability -> result.probability)
 @app.post('/predict')
 def predict(features: Features):
-    # Fixed: Use model_dump() for Pydantic v2
     row = pd.DataFrame([features.model_dump()], columns=COLUMNS)
     prediction = model.predict(row)
     probability = model.predict_proba(row)
 
     return {
         'Predicted_room_type': str(prediction[0]),
-        'probability': probability.tolist()[0]  # Fixed: .tolist() instead of .to_list()
+        'probability': probability.tolist()[0]
     }
+
+# 3. Mount current directory root to catch all style.css and script.js files automatically
+app.mount("/", StaticFiles(directory="."), name="static")
